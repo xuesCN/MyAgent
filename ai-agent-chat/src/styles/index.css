@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-tech-dark text-white font-sans;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-tech-blue via-tech-purple to-tech-green bg-clip-text text-transparent;
+  }
+  
+  .gradient-border {
+    @apply relative;
+  }
+  
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: linear-gradient(45deg, #00d4ff, #8b5cf6, #00ff88);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+  }
+  
+  .tech-glow {
+    @apply shadow-lg shadow-tech-blue/20;
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-tech-gray;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-tech-blue rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-tech-purple;
+}
+
+/* Selection styles */
+::selection {
+  @apply bg-tech-blue/30 text-white;
+}
+
+/* Focus styles */
+:focus-visible {
+  @apply outline-none ring-2 ring-tech-blue ring-offset-2 ring-offset-tech-dark;
+}
