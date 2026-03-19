@@ -8,6 +8,7 @@ import {
 } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import * as math from "mathjs";
 import { Message, MessageContentItem } from "../../types";
 import { chatService } from "./chatService";
 import { tavilyService } from "./tavilyService";
@@ -43,6 +44,57 @@ const searchTool = tool(
       "使用 Tavily 搜索引擎搜索最新的网络信息。当你需要获取实时信息、最新新闻、当前事件、天气、股票价格等最新数据时，应该使用此工具。",
     schema: z.object({
       query: z.string().describe("要搜索的关键词或问题"),
+    }),
+  }
+);
+
+// 计算工具定义
+const mathTool = tool(
+  async (input: { expression: string }) => {
+    try {
+      const expression = input.expression;
+
+      if (
+        !expression ||
+        typeof expression !== "string" ||
+        expression.trim() === ""
+      ) {
+        return "计算失败：请提供有效的数学表达式";
+      }
+
+      console.log(`[计算工具] 正在计算: ${expression}`);
+
+      // 使用 mathjs 进行计算
+      const result = math.evaluate(expression);
+
+      // 处理不同的返回类型
+      let resultStr: string;
+      if (typeof result === "number") {
+        resultStr = result.toString();
+      } else if (typeof result === "string") {
+        resultStr = result;
+      } else if (result && typeof result === "object") {
+        resultStr = JSON.stringify(result);
+      } else {
+        resultStr = String(result);
+      }
+
+      return `计算结果: ${expression} = ${resultStr}`;
+    } catch (error: any) {
+      console.error("计算工具错误:", error);
+      return `计算失败：${error.message || "表达式无效"}`;
+    }
+  },
+  {
+    name: "math",
+    description:
+      "执行数学计算和表达式求值。支持基本运算、函数和变量。\n" +
+      "例如: 2 + 2 * 3, sqrt(16), sin(PI/2), (10 + 20) * (30 - 5)\n" +
+      "当需要进行数学计算、单位转换、公式求解时使用此工具。",
+    schema: z.object({
+      expression: z.string().describe(
+        "数学表达式。例如: 2 + 2, sqrt(16), 3.14159 * 2, sin(PI/2), (5 + 3) * 2"
+      ),
     }),
   }
 );
@@ -108,6 +160,10 @@ async function executeTool(toolName: string, args: any): Promise<string> {
     const result = await searchTool.invoke(args);
     // 确保返回字符串
     return typeof result === "string" ? result : String(result);
+  } else if (toolName === "math") {
+    const result = await mathTool.invoke(args);
+    // 确保返回字符串
+    return typeof result === "string" ? result : String(result);
   }
   throw new Error(`未知的工具: ${toolName}`);
 }
@@ -122,12 +178,13 @@ async function executeAgentFlow(
 
   // 创建LLM实例
   const llm = createLLM();
-  const llmWithTools = llm.bindTools([searchTool]);
+  const llmWithTools = llm.bindTools([searchTool, mathTool]);
 
   // 添加系统提示（只在第一次调用时添加）
   const systemMessage = new SystemMessage(
     "你是一个专业的AI助手，请用中文回答问题。回答要简洁明了，有逻辑性。\n\n" +
-      "当你需要获取实时信息、最新新闻、当前事件、天气、股票价格等最新数据时，应该使用搜索工具。"
+      "当你需要获取实时信息、最新新闻、当前事件、天气、股票价格等最新数据时，应该使用搜索工具。\n" +
+      "当需要进行数学计算、单位转换或公式求解时，应该使用计算工具。"
   );
 
   // 确保系统消息只添加一次

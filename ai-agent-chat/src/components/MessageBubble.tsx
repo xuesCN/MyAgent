@@ -5,6 +5,7 @@ import { TypingMessage } from "./TypingEffect";
 import { User, Bot, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { formatMessageTime } from "../utils/messageFormatter";
 
 interface MessageBubbleProps {
   message: Message;
@@ -34,27 +35,20 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     setIsTyping(false);
   };
 
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("zh-CN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
-
   const isUser = message.sender === "user";
 
   return (
     <div
       className={cn(
         "flex gap-3 px-4 py-2 hover:bg-gray-900/30 transition-colors",
-        isUser && "flex-row-reverse"
+        isUser && "flex-row-reverse",
       )}
     >
       {/* 头像 */}
       <div
         className={cn(
           "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-          isUser ? "bg-tech-blue" : "bg-tech-purple"
+          isUser ? "bg-tech-blue" : "bg-tech-purple",
         )}
       >
         {isUser ? (
@@ -71,7 +65,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             "rounded-lg px-4 py-2",
             isUser
               ? "bg-tech-blue text-white"
-              : "bg-tech-gray border border-gray-700"
+              : "bg-tech-gray border border-gray-700",
           )}
         >
           {message.sender === "ai" && isTyping && message.isStreaming ? (
@@ -123,7 +117,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {/* 时间戳 */}
         <div className="text-xs text-gray-500 mt-1 px-1">
-          {formatTime(message.timestamp)}
+          {formatMessageTime(message.timestamp)}
         </div>
       </div>
     </div>

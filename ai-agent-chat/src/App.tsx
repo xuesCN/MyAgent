@@ -1,18 +1,23 @@
-import React, { useEffect } from 'react';
-import { Sidebar } from './components/Sidebar';
-import { ChatInterface } from './components/ChatInterface';
-import { useChat } from './hooks/useChat';
-import './App.css';
+import React, { useEffect } from "react";
+import { Sidebar } from "./components/Sidebar";
+import { ChatInterface } from "./components/ChatInterface";
+import { useAgentChat } from "./hooks/useAgentChat";
+import "./App.css";
 
 function App() {
-  const { chatState, createSession, switchSession, deleteSession, sendMessage } = useChat();
+  const {
+    chatState,
+    createSession,
+    switchSession,
+    deleteSession,
+    sendMessage,
+    initializeDefaultSession,
+  } = useAgentChat();
 
   // 初始化时创建默认会话
   useEffect(() => {
-    if (chatState.sessions.length === 0) {
-      createSession('欢迎对话');
-    }
-  }, [chatState.sessions.length, createSession]);
+    initializeDefaultSession();
+  }, [initializeDefaultSession]);
 
   return (
     <div className="flex h-screen bg-tech-dark">
@@ -41,9 +46,7 @@ function App() {
               <h2 className="text-2xl font-bold text-gradient mb-4">
                 AI Agent 智能对话系统
               </h2>
-              <p className="text-gray-400">
-                请创建新对话开始聊天
-              </p>
+              <p className="text-gray-400">请创建新对话开始聊天</p>
             </div>
           </div>
         )}
