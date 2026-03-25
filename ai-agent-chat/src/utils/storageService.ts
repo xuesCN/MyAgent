@@ -9,13 +9,10 @@ class StorageService {
   // 获取所有会话
   async getSessions(): Promise<ChatSession[]> {
     try {
-      console.log('Checking localStorage for sessions...');
       const data = localStorage.getItem(STORAGE_KEYS.SESSIONS);
-      console.log('Raw localStorage data:', data);
       if (!data) return [];
       
       const sessions = JSON.parse(data);
-      console.log('Parsed sessions:', sessions);
       return sessions.map((session: any) => ({
         ...session,
         createdAt: new Date(session.createdAt),
@@ -34,14 +31,8 @@ class StorageService {
   // 保存会话
   async saveSessions(sessions: ChatSession[]): Promise<void> {
     try {
-      console.log('Attempting to save sessions:', sessions);
       const stringifiedData = JSON.stringify(sessions);
-      console.log('Stringified sessions:', stringifiedData);
       localStorage.setItem(STORAGE_KEYS.SESSIONS, stringifiedData);
-      console.log('Sessions saved to localStorage');
-      // 验证保存是否成功
-      const storedData = localStorage.getItem(STORAGE_KEYS.SESSIONS);
-      console.log('Verified stored data:', storedData);
     } catch (error) {
       console.error('Failed to save sessions to storage:', error);
       throw new Error('保存会话失败');

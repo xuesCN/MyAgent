@@ -1,0 +1,9 @@
+{
+  "short_name": "AI Agent",
+  "name": "AI Agent 智能对话系统",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#0f172a"
+}

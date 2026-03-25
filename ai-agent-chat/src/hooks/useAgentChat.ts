@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { ChatSession } from "../types";
-import { executeAgentGraphStream } from "../api/services/langGraphService";
+import { agentRuntimeFacade } from "../api/services/agentRuntimeFacade";
 import { useSessionManagement } from "./useSessionManagement";
 import { useMessageManagement } from "./useMessageManagement";
+import { warnDevOnce } from "../utils/devLogger";
 
 /**
  * 聊天状态类型定义
@@ -24,7 +25,6 @@ interface UseAgentChatResult {
   deleteSession: (sessionId: string) => Promise<void>;
   sendMessage: (
     content: string,
-    useSearch?: boolean,
     imageUrl?: string,
   ) => Promise<void>;
   initializeDefaultSession: () => Promise<void>;
@@ -44,6 +44,7 @@ export const useAgentChat = (): UseAgentChatResult => {
   // 获取会话管理功能
   const {
     sessions,
+    isSessionsLoaded,
     createSession: createSessionAPI,
     deleteSession,
     updateSession,
@@ -55,6 +56,23 @@ export const useAgentChat = (): UseAgentChatResult => {
       currentSession,
       onSessionUpdate: setCurrentSession,
     });
+
+  const getErrorMessage = useCallback(
+    (err: unknown, fallback: string) =>
+      err instanceof Error ? err.message : fallback,
+    [],
+  );
+
+  const persistSessionMessages = useCallback(
+    async (session: ChatSession, messages: ChatSession["messages"]) => {
+      await updateSession({
+        ...session,
+        messages,
+        updatedAt: new Date(),
+      });
+    },
+    [updateSession],
+  );
 
   /**
    * 当 sessions 改变时，同步 currentSession
@@ -75,12 +93,12 @@ export const useAgentChat = (): UseAgentChatResult => {
         const newSession = await createSessionAPI(title);
         setCurrentSession(newSession);
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "创建会话失败";
+        const errorMsg = getErrorMessage(err, "创建会话失败");
         console.error("[Agent Chat] 创建会话失败:", errorMsg);
         setError(errorMsg);
       }
     },
-    [createSessionAPI],
+    [createSessionAPI, getErrorMessage],
   );
 
   /**
@@ -90,7 +108,6 @@ export const useAgentChat = (): UseAgentChatResult => {
     (sessionId: string) => {
       const session = sessions.find((s) => s.id === sessionId);
       if (session) {
-        console.log("[Agent Chat] 切换会话:", sessionId);
         setCurrentSession(session);
       }
     },
@@ -112,12 +129,12 @@ export const useAgentChat = (): UseAgentChatResult => {
           );
         }
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "删除会话失败";
+        const errorMsg = getErrorMessage(err, "删除会话失败");
         console.error("[Agent Chat] 删除会话失败:", errorMsg);
         setError(errorMsg);
       }
     },
-    [deleteSession, currentSession, sessions],
+    [deleteSession, currentSession, sessions, getErrorMessage],
   );
 
   /**
@@ -125,52 +142,49 @@ export const useAgentChat = (): UseAgentChatResult => {
    */
   const initializeDefaultSession = useCallback(async () => {
     try {
+      if (!isSessionsLoaded) {
+        return;
+      }
+
       if (sessions.length === 0) {
-        console.log("[Agent Chat] 创建默认会话");
         const newSession = await createSessionAPI("欢迎对话");
         setCurrentSession(newSession);
       } else if (!currentSession) {
-        console.log("[Agent Chat] 切换到第一个会话");
         setCurrentSession(sessions[0]);
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "初始化会话失败";
+      const errorMsg = getErrorMessage(err, "初始化会话失败");
       console.error("[Agent Chat] 初始化失败:", errorMsg);
       setError(errorMsg);
     }
-  }, [sessions, currentSession, createSessionAPI]);
+  }, [isSessionsLoaded, sessions, currentSession, createSessionAPI, getErrorMessage]);
 
   /**
    * 发送消息（核心功能）
    */
   const sendMessage = useCallback(
-    async (content: string, useSearch?: boolean, imageUrl?: string) => {
-      // useSearch 参数保留以兼容现有代码，但实际由 LangGraph 决定
-      if (!currentSession || (!content.trim() && !imageUrl)) {
-        console.warn("[Agent Chat] 会话或内容无效，无法发送消息");
+    async (content: string, imageUrl?: string) => {
+      if (!currentSession) {
+        warnDevOnce(
+          "send_without_session",
+          "[Agent Chat] 在 currentSession 为空时调用了 sendMessage。"
+        );
         return;
       }
 
+      if (!content.trim() && !imageUrl) {
+        return;
+      }
+
+      const session = currentSession;
       setIsLoading(true);
       setError(null);
 
       try {
-        console.log("[Agent Chat] 开始发送消息");
-
         // 1. 添加用户消息
         const userMessage = addUserMessage(content, imageUrl);
         if (!userMessage) {
           throw new Error("无法创建用户消息");
-        }
-
-        // 更新会话到 localStorage
-        if (currentSession) {
-          const updatedSession = {
-            ...currentSession,
-            messages: [...currentSession.messages, userMessage],
-            updatedAt: new Date(),
-          };
-          await updateSession(updatedSession);
         }
 
         // 2. 添加 AI 占位符
@@ -179,29 +193,29 @@ export const useAgentChat = (): UseAgentChatResult => {
           throw new Error("无法创建 AI 消息");
         }
 
-        // 更新会话到 localStorage
-        if (currentSession) {
-          const updatedSession = {
-            ...currentSession,
-            messages: [...currentSession.messages, userMessage, aiMessage],
-            updatedAt: new Date(),
-          };
-          await updateSession(updatedSession);
-        }
+        const requestMessages = [...session.messages, userMessage];
+        const pendingMessages = [...requestMessages, aiMessage];
+        await persistSessionMessages(session, pendingMessages);
 
         // 3. 获取 AI 响应（流式）
-        console.log("[Agent Chat] 调用 LangGraph 服务");
         let aiContent = "";
 
         // 获取最新的会话消息（包含用户消息）
-        const messagesForAPI = currentSession
-          ? [...currentSession.messages, userMessage]
-          : [userMessage];
+        const stream = agentRuntimeFacade.stream(requestMessages);
+        let finalAnswerFromState = "";
 
-        const stream = executeAgentGraphStream(messagesForAPI);
+        while (true) {
+          const item = await stream.next();
+          if (item.done) {
+            finalAnswerFromState = item.value?.final?.answerText || "";
+            break;
+          }
+          aiContent += item.value;
+          updateAIMessage(aiMessage.id, aiContent, false);
+        }
 
-        for await (const chunk of stream) {
-          aiContent += chunk;
+        if (!aiContent.trim()) {
+          aiContent = finalAnswerFromState.trim() || "抱歉，无法生成回答。";
           updateAIMessage(aiMessage.id, aiContent, false);
         }
 
@@ -209,43 +223,34 @@ export const useAgentChat = (): UseAgentChatResult => {
         updateAIMessage(aiMessage.id, aiContent, true);
 
         // 5. 保存完整的会话到 localStorage
-        if (currentSession) {
-          const finalSession = {
-            ...currentSession,
-            messages: [
-              ...currentSession.messages,
-              userMessage,
-              {
-                ...aiMessage,
-                content: aiContent,
-                isStreaming: false,
-              },
-            ],
-            updatedAt: new Date(),
-          };
-          await updateSession(finalSession);
-        }
-
-        console.log("[Agent Chat] 消息发送完成");
-        setIsLoading(false);
+        await persistSessionMessages(session, [
+          ...requestMessages,
+          {
+            ...aiMessage,
+            content: aiContent,
+            isStreaming: false,
+          },
+        ]);
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "发送消息失败";
+        const errorMsg = getErrorMessage(err, "发送消息失败");
         console.error("[Agent Chat] 发送消息失败:", errorMsg);
         setError(errorMsg);
-        setIsLoading(false);
 
         // 清理失败的 AI 消息
-        if (currentSession) {
-          const cleanedMessages = currentSession.messages.filter(
+        setCurrentSession((prevSession) => {
+          if (!prevSession) return prevSession;
+          const cleanedMessages = prevSession.messages.filter(
             (msg) =>
               msg.sender === "user" ||
               (msg.sender === "ai" && msg.content !== ""),
           );
-          setCurrentSession({
-            ...currentSession,
+          return {
+            ...prevSession,
             messages: cleanedMessages,
-          });
-        }
+          };
+        });
+      } finally {
+        setIsLoading(false);
       }
     },
     [
@@ -253,7 +258,8 @@ export const useAgentChat = (): UseAgentChatResult => {
       addUserMessage,
       addAIPlaceholder,
       updateAIMessage,
-      updateSession,
+      persistSessionMessages,
+      getErrorMessage,
     ],
   );
 

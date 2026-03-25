@@ -32,24 +32,24 @@ export const SessionListItem: React.FC<SessionListItemProps> = ({
     <div
       onClick={onSelect}
       className={cn(
-        'group relative p-3 rounded-lg cursor-pointer transition-all duration-200',
+        'group relative cursor-pointer rounded-xl border p-3 transition-all duration-200',
         isActive
-          ? 'bg-tech-gray border border-tech-blue text-white'
-          : 'hover:bg-gray-800 text-gray-300',
+          ? 'border-cyan-400/70 bg-cyan-400/10 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.25)]'
+          : 'border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-800/55',
         isDeletingId === session.id && 'opacity-0 scale-95'
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium truncate">
+          <h3 className="truncate text-sm font-medium">
             {extractSessionTitle(session)}
           </h3>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-gray-500">
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-xs text-slate-500">
               {formatSessionDate(session.updatedAt)}
             </span>
             {session.messages.length > 0 && (
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-slate-500">
                 {session.messages.length} 条消息
               </span>
             )}
@@ -60,7 +60,7 @@ export const SessionListItem: React.FC<SessionListItemProps> = ({
           onClick={handleDelete}
           className={cn(
             'opacity-0 group-hover:opacity-100 transition-opacity',
-            'p-1 rounded hover:bg-red-500/20 text-red-400 hover:text-red-300'
+            'rounded p-1 text-red-300/70 hover:bg-red-500/20 hover:text-red-200'
           )}
         >
           <Trash2 className="w-3 h-3" />

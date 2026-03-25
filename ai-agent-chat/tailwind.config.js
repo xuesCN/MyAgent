@@ -13,7 +13,7 @@ module.exports = {
       },
       fontFamily: {
         mono: ["JetBrains Mono", "monospace"],
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Manrope", "PingFang SC", "Microsoft YaHei", "system-ui", "sans-serif"],
       },
       animation: {
         typing: "typing 2s steps(20, end)",

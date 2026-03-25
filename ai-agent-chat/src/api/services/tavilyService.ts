@@ -1,3 +1,5 @@
+import { warnDevOnce } from "../../utils/devLogger";
+
 interface TavilySearchResult {
   answer: string;
   [key: string]: any;
@@ -8,20 +10,16 @@ export class TavilyService {
   private baseUrl: string;
 
   constructor() {
-    // 直接硬编码API密钥以确保可用性
-    this.apiKey = "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";
+    // 从环境变量读取 API 密钥
+    this.apiKey = process.env.REACT_APP_TAVILY_API_KEY || "";
     this.baseUrl = "https://api.tavily.com/search";
 
-    // 同时记录环境变量中的值进行调试
-    const envKey = process.env.REACT_APP_TAVILY_API_KEY;
-    console.log(
-      "Tavily API Key from env:",
-      envKey ? "Available" : "Not available"
-    );
-    console.log(
-      "Using API Key:",
-      this.apiKey ? "Configured" : "Not configured"
-    );
+    if (!this.apiKey.trim()) {
+      warnDevOnce(
+        "missing_tavily_api_key",
+        "[Config] REACT_APP_TAVILY_API_KEY 未配置，涉及搜索工具的问题会失败。"
+      );
+    }
   }
 
   // 执行搜索并获取答案

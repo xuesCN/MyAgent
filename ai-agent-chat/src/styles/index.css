@@ -8,8 +8,9 @@
   }
   
   body {
-    @apply bg-tech-dark text-white font-sans;
+    @apply font-sans text-slate-100;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    background-color: #020617;
   }
 }
 
@@ -53,15 +54,15 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-tech-gray;
+  @apply bg-slate-900;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-tech-blue rounded-full;
+  @apply rounded-full bg-slate-600;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-tech-purple;
+  @apply bg-slate-500;
 }
 
 /* Selection styles */
@@ -71,5 +72,5 @@
 
 /* Focus styles */
 :focus-visible {
-  @apply outline-none ring-2 ring-tech-blue ring-offset-2 ring-offset-tech-dark;
+  @apply outline-none ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900;
 }

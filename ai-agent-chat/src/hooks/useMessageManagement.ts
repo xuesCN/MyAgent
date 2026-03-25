@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { Dispatch, SetStateAction, useCallback } from "react";
 import { Message, ChatSession, MessageContentItem } from "../types";
 
 /**
@@ -17,7 +17,7 @@ interface UseMessageManagementResult {
 
 interface UseMessageManagementProps {
   currentSession: ChatSession | null;
-  onSessionUpdate: (session: ChatSession) => void;
+  onSessionUpdate: Dispatch<SetStateAction<ChatSession | null>>;
 }
 
 export const useMessageManagement = ({
@@ -61,7 +61,6 @@ export const useMessageManagement = ({
   const addUserMessage = useCallback(
     (content: string, imageUrl?: string): Message | null => {
       if (!currentSession) {
-        console.warn("[Message Manager] 当前会话不存在");
         return null;
       }
 
@@ -74,14 +73,15 @@ export const useMessageManagement = ({
         timestamp: new Date(),
       };
 
-      const updatedSession = {
-        ...currentSession,
-        messages: [...currentSession.messages, userMessage],
-        updatedAt: new Date(),
-      };
+      onSessionUpdate((prevSession) => {
+        if (!prevSession || prevSession.id !== currentSession.id) return prevSession;
 
-      console.log("[Message Manager] 添加用户消息:", userMessage.id);
-      onSessionUpdate(updatedSession);
+        return {
+          ...prevSession,
+          messages: [...prevSession.messages, userMessage],
+          updatedAt: new Date(),
+        };
+      });
 
       return userMessage;
     },
@@ -93,7 +93,6 @@ export const useMessageManagement = ({
    */
   const addAIPlaceholder = useCallback((): Message | null => {
     if (!currentSession) {
-      console.warn("[Message Manager] 当前会话不存在");
       return null;
     }
 
@@ -105,14 +104,15 @@ export const useMessageManagement = ({
       isStreaming: true,
     };
 
-    const updatedSession = {
-      ...currentSession,
-      messages: [...currentSession.messages, aiMessage],
-      updatedAt: new Date(),
-    };
+      onSessionUpdate((prevSession) => {
+        if (!prevSession || prevSession.id !== currentSession.id) return prevSession;
 
-    console.log("[Message Manager] 添加 AI 占位符:", aiMessage.id);
-    onSessionUpdate(updatedSession);
+        return {
+          ...prevSession,
+          messages: [...prevSession.messages, aiMessage],
+          updatedAt: new Date(),
+        };
+      });
 
     return aiMessage;
   }, [currentSession, onSessionUpdate]);
@@ -123,27 +123,30 @@ export const useMessageManagement = ({
   const updateAIMessage = useCallback(
     (messageId: string, content: string, isComplete: boolean = false) => {
       if (!currentSession) {
-        console.warn("[Message Manager] 当前会话不存在");
         return;
       }
 
-      const updatedMessages = currentSession.messages.map((msg) =>
-        msg.id === messageId
-          ? {
-              ...msg,
-              content,
-              isStreaming: !isComplete,
-            }
-          : msg,
-      );
+      onSessionUpdate((prevSession) => {
+        if (!prevSession || prevSession.id !== currentSession.id) {
+          return prevSession;
+        }
 
-      const updatedSession = {
-        ...currentSession,
-        messages: updatedMessages,
-        updatedAt: new Date(),
-      };
+        const updatedMessages = prevSession.messages.map((msg) =>
+          msg.id === messageId
+            ? {
+                ...msg,
+                content,
+                isStreaming: !isComplete,
+              }
+            : msg,
+        );
 
-      onSessionUpdate(updatedSession);
+        return {
+          ...prevSession,
+          messages: updatedMessages,
+          updatedAt: new Date(),
+        };
+      });
     },
     [currentSession, onSessionUpdate],
   );

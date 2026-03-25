@@ -8,6 +8,7 @@ import { storageService } from "../utils/storageService";
  */
 interface UseSessionManagementResult {
   sessions: ChatSession[];
+  isSessionsLoaded: boolean;
   createSession: (title?: string) => Promise<ChatSession>;
   deleteSession: (sessionId: string) => Promise<void>;
   updateSession: (session: ChatSession) => Promise<void>;
@@ -16,6 +17,7 @@ interface UseSessionManagementResult {
 
 export const useSessionManagement = (): UseSessionManagementResult => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [isSessionsLoaded, setIsSessionsLoaded] = useState(false);
 
   /**
    * 初始化时加载会话
@@ -23,15 +25,12 @@ export const useSessionManagement = (): UseSessionManagementResult => {
   useEffect(() => {
     const loadSessionsFromStorage = async () => {
       try {
-        console.log("[Session Manager] 从 localStorage 加载会话...");
         const loadedSessions = await storageService.getSessions();
-        console.log(
-          "[Session Manager] 加载完成，会话数:",
-          loadedSessions.length,
-        );
         setSessions(loadedSessions);
       } catch (error) {
         console.error("[Session Manager] 加载会话失败:", error);
+      } finally {
+        setIsSessionsLoaded(true);
       }
     };
 
@@ -65,11 +64,8 @@ export const useSessionManagement = (): UseSessionManagementResult => {
         };
 
         const updatedSessions = [newSession, ...sessions];
-
-        console.log("[Session Manager] 创建新会话:", newSession.id);
         setSessions(updatedSessions);
         await storageService.saveSessions(updatedSessions);
-        console.log("[Session Manager] 会话已保存");
 
         return newSession;
       } catch (error) {
@@ -87,11 +83,8 @@ export const useSessionManagement = (): UseSessionManagementResult => {
     async (sessionId: string) => {
       try {
         const updatedSessions = sessions.filter((s) => s.id !== sessionId);
-
-        console.log("[Session Manager] 删除会话:", sessionId);
         setSessions(updatedSessions);
         await storageService.saveSessions(updatedSessions);
-        console.log("[Session Manager] 会话已删除");
       } catch (error) {
         console.error("[Session Manager] 删除会话失败:", error);
         throw error;
@@ -109,11 +102,8 @@ export const useSessionManagement = (): UseSessionManagementResult => {
         const newSessions = sessions.map((s) =>
           s.id === updatedSession.id ? updatedSession : s,
         );
-
-        console.log("[Session Manager] 更新会话:", updatedSession.id);
         setSessions(newSessions);
         await storageService.saveSessions(newSessions);
-        console.log("[Session Manager] 会话已更新");
       } catch (error) {
         console.error("[Session Manager] 更新会话失败:", error);
         throw error;
@@ -124,6 +114,7 @@ export const useSessionManagement = (): UseSessionManagementResult => {
 
   return {
     sessions,
+    isSessionsLoaded,
     createSession,
     deleteSession,
     updateSession,

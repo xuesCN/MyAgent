@@ -40,7 +40,7 @@ if [ ! -f ".env" ]; then
     read -p "请输入火山云API密钥 (或按Enter使用默认密钥): " api_key
     
     if [ -z "$api_key" ]; then
-        api_key="6ac879c9-9a62-49f0-a99a-db2e0a4b8e02"
+        api_key="c0fae71e-ce19-4cb4-9a02-2a6e452d58d5"
         echo "使用默认API密钥"
     fi
     
@@ -48,7 +48,7 @@ if [ ! -f ".env" ]; then
 # 火山云API配置
 REACT_APP_VOLCANO_API_KEY=$api_key
 REACT_APP_API_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
-REACT_APP_MODEL_ID=doubao-seed-1-6-251015
+REACT_APP_MODEL_ID=doubao-seed-2-0-pro-260215
 
 # 应用配置
 REACT_APP_NAME=AI Agent 智能对话系统
