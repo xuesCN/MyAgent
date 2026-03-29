@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChatSession } from "../types";
-import { storageService } from "../utils/storageService";
+import { ChatSession } from "../../../types";
+import { storageService } from "../../../utils/storageService";
 
 /**
  * 会话管理 Hook

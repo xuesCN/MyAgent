@@ -1,15 +1,16 @@
 import React from "react";
-import { cn } from "../utils/cn";
-import { Message } from "../types";
+import { cn } from "../../../utils/cn";
+import { Message } from "../../../types";
 import { User, Bot, Loader2 } from "lucide-react";
-import { formatMessageTime } from "../utils/messageFormatter";
+import { formatMessageTime } from "../../../utils/messageFormatter";
 import { MarkdownRenderer } from "./MarkdownRenderer";
+import { isSafeImageUrl, sanitizeUserUrl } from "../utils/markdownSecurity";
 
 interface MessageBubbleProps {
   message: Message;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({
+const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
   message,
 }) => {
   const isUser = message.sender === "user";
@@ -67,11 +68,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                   }
 
                   if (item.type === "image_url") {
+                    const safeImageUrl = sanitizeUserUrl(item.image_url.url);
+
+                    if (!isSafeImageUrl(safeImageUrl)) {
+                      return (
+                        <div
+                          key={index}
+                          className="my-1 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
+                        >
+                          图片链接已被安全策略拦截
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={index} className="my-1">
                         <img
-                          src={item.image_url.url}
+                          src={safeImageUrl}
                           alt="用户上传"
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
                           className="max-h-64 max-w-full rounded-lg border border-slate-600/70 object-contain"
                         />
                       </div>
@@ -112,3 +129,5 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     </div>
   );
 };
+
+export const MessageBubble = React.memo(MessageBubbleComponent);

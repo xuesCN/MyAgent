@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { cn } from "../utils/cn";
+import { cn } from "../../utils/cn";
 
 interface CodeBlockProps {
   code: string;
@@ -9,7 +9,7 @@ interface CodeBlockProps {
   isUser?: boolean;
 }
 
-export const CodeBlock: React.FC<CodeBlockProps> = ({
+const CodeBlockComponent: React.FC<CodeBlockProps> = ({
   code,
   codeClassName,
   language,
@@ -68,3 +68,4 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   );
 };
 
+export const CodeBlock = React.memo(CodeBlockComponent);

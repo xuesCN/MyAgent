@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Sidebar } from "./components/Sidebar";
-import { ChatInterface } from "./components/ChatInterface";
-import { useAgentChat } from "./hooks/useAgentChat";
+import { Sidebar } from "./components/layout/Sidebar";
+import { ChatInterface } from "./features/chat/components/ChatInterface";
+import { useAgentChat } from "./features/chat/hooks/useAgentChat";
 import { ChatSession } from "./types";
 import "./App.css";
 

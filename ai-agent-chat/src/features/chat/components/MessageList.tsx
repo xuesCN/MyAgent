@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Message } from '../types';
+import { Message } from '../../../types';
 import { MessageBubble } from './MessageBubble';
 
 interface MessageListProps {
@@ -11,14 +11,44 @@ export const MessageList: React.FC<MessageListProps> = ({
 }) => {
   const listContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const previousMessageCountRef = useRef(messages.length);
+  const shouldStickToBottomRef = useRef(true);
+
+  useEffect(() => {
+    const container = listContainerRef.current;
+    if (!container) return;
+
+    const updateStickiness = () => {
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      shouldStickToBottomRef.current = distanceFromBottom <= 80;
+    };
+
+    updateStickiness();
+    container.addEventListener('scroll', updateStickiness, { passive: true });
+
+    return () => {
+      container.removeEventListener('scroll', updateStickiness);
+    };
+  }, []);
 
   // 自动滚动到底部
   useEffect(() => {
     const container = listContainerRef.current;
     if (!container) return;
+
+    const hasNewMessage = messages.length > previousMessageCountRef.current;
+    const shouldAutoScroll = hasNewMessage || shouldStickToBottomRef.current;
+
+    previousMessageCountRef.current = messages.length;
+
+    if (!shouldAutoScroll) {
+      return;
+    }
+
     container.scrollTo({
       top: container.scrollHeight,
-      behavior: 'smooth',
+      behavior: hasNewMessage ? 'smooth' : 'auto',
     });
   }, [messages]);
 

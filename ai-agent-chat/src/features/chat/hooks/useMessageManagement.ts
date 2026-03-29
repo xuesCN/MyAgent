@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useCallback } from "react";
-import { Message, ChatSession, MessageContentItem } from "../types";
+import { Message, ChatSession, MessageContentItem } from "../../../types";
 
 /**
  * 消息管理 Hook

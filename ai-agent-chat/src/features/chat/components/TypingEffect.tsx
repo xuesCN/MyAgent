@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { cn } from "../utils/cn";
+import { cn } from "../../../utils/cn";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 

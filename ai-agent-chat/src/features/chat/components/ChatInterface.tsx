@@ -1,9 +1,9 @@
 import React from 'react';
-import { cn } from '../utils/cn';
+import { cn } from '../../../utils/cn';
 import { ChatInput } from './ChatInput';
 import { WelcomeScreen } from './WelcomeScreen';
 import { MessageList } from './MessageList';
-import { Message } from '../types';
+import { Message } from '../../../types';
 import { Eye, X } from 'lucide-react';
 
 interface ChatInterfaceProps {

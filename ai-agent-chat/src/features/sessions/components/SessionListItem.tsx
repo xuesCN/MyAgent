@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ChatSession } from '../types';
+import { ChatSession } from '../../../types';
 import { Trash2 } from 'lucide-react';
-import { cn } from '../utils/cn';
-import { extractSessionTitle, formatSessionDate } from '../utils/messageFormatter';
+import { cn } from '../../../utils/cn';
+import { extractSessionTitle, formatSessionDate } from '../../../utils/messageFormatter';
 
 interface SessionListItemProps {
   session: ChatSession;

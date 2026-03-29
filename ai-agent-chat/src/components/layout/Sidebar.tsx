@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { cn } from "../utils/cn";
-import { ChatSession } from "../types";
+import { cn } from "../../utils/cn";
+import { ChatSession } from "../../types";
 import { MessageSquare, Settings, Menu, X } from "lucide-react";
 import { SidebarHeader } from "./SidebarHeader";
-import { SessionListItem } from "./SessionListItem";
+import { SessionListItem } from "../../features/sessions/components/SessionListItem";
 
 interface SidebarProps {
   sessions: ChatSession[];

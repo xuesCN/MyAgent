@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { cn } from "../utils/cn";
+import { cn } from "../../../utils/cn";
 import { Send, Loader2 } from "lucide-react";
 import { ImageUploadIndicator } from "./ImageUploadIndicator";
 import { useImageUpload } from "../hooks/useImageUpload";

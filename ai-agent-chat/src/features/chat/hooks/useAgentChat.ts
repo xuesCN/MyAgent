@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
-import { ChatSession } from "../types";
-import { agentRuntimeFacade } from "../api/services/agentRuntimeFacade";
-import { useSessionManagement } from "./useSessionManagement";
+import { ChatSession } from "../../../types";
+import { agentRuntimeFacade } from "../../../api/services/agentRuntimeFacade";
+import { useSessionManagement } from "../../sessions/hooks/useSessionManagement";
 import { useMessageManagement } from "./useMessageManagement";
-import { warnDevOnce } from "../utils/devLogger";
+import { warnDevOnce } from "../../../utils/devLogger";
 
 /**
  * 聊天状态类型定义
@@ -199,10 +199,28 @@ export const useAgentChat = (): UseAgentChatResult => {
 
         // 3. 获取 AI 响应（流式）
         let aiContent = "";
+        let renderedContent = "";
+        let lastFlushAt = 0;
+        const STREAM_UPDATE_INTERVAL_MS = 33;
 
         // 获取最新的会话消息（包含用户消息）
         const stream = agentRuntimeFacade.stream(requestMessages);
         let finalAnswerFromState = "";
+
+        const flushStreamingUpdate = (force: boolean = false) => {
+          const now = Date.now();
+          if (!force && now - lastFlushAt < STREAM_UPDATE_INTERVAL_MS) {
+            return;
+          }
+
+          if (renderedContent === aiContent) {
+            return;
+          }
+
+          renderedContent = aiContent;
+          lastFlushAt = now;
+          updateAIMessage(aiMessage.id, renderedContent, false);
+        };
 
         while (true) {
           const item = await stream.next();
@@ -211,13 +229,14 @@ export const useAgentChat = (): UseAgentChatResult => {
             break;
           }
           aiContent += item.value;
-          updateAIMessage(aiMessage.id, aiContent, false);
+          flushStreamingUpdate();
         }
 
         if (!aiContent.trim()) {
           aiContent = finalAnswerFromState.trim() || "抱歉，无法生成回答。";
-          updateAIMessage(aiMessage.id, aiContent, false);
         }
+
+        flushStreamingUpdate(true);
 
         // 4. 标记完成
         updateAIMessage(aiMessage.id, aiContent, true);
